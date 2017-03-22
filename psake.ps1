@@ -17,7 +17,7 @@ task Init {
     "Build System Details:"
     Get-Item ENV:BH*
 
-    $modules = 'Pester', 'platyPS', 'PSScriptAnalyzer'
+    $modules = 'Pester', 'PSScriptAnalyzer'
     Install-Module $modules -Repository PSGallery -Confirm:$false
     Import-Module $modules -Verbose:$false -Force
 } -description 'Initialize build environment'
@@ -43,4 +43,3 @@ task Pester -Depends Init {
         Invoke-Pester -Path $tests -PassThru -EnableExit
     }
 } -description 'Run Pester tests'
-
