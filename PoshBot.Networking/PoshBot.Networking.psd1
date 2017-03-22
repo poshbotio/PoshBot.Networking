@@ -105,10 +105,10 @@ PrivateData = @{
         Tags = @('Networking', 'PoshBot', 'ChatOps', 'Dig', 'DNS', 'Ping')
 
         # A URL to the license for this module.
-        # LicenseUri = ''
+        LicenseUri = 'https://raw.githubusercontent.com/poshbotio/PoshBot.Networking/master/LICENSE'
 
         # A URL to the main website for this project.
-        # ProjectUri = ''
+        ProjectUri = 'https://github.com/poshbotio/PoshBot.Networking'
 
         # A URL to an icon representing this module.
         # IconUri = ''
