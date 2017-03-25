@@ -1,12 +1,15 @@
 
-function Ping {
+function Invoke-Ping {
     <#
     .SYNOPSIS
         Tests a connection to a host
     .EXAMPLE
         !ping (<www.google.com> | --name <www.google.com>) [--count 2] [--ipv6]
     #>
-    [PoshBot.BotCommand(Permissions = 'test-network')]
+    [PoshBot.BotCommand(
+        CommandName = 'ping',
+        Permissions = 'test-network'
+    )]
     [cmdletbinding()]
     param(
         [parameter(Mandatory, Position = 0)]
@@ -28,14 +31,17 @@ function Ping {
     New-PoshBotCardResponse -Type Normal -Text ($r -Join "`n")
 }
 
-function Dig {
+function Invoke-Dig {
     <#
     .SYNOPSIS
         Perform DNS resolution on a host
     .EXAMPLE
         !dig (<www.google.com> | --name <www.google.com>) [--type <A>] [--server <8.8.8.8>]
     #>
-    [PoshBot.BotCommand(Permissions = 'test-network')]
+    [PoshBot.BotCommand(
+        CommandName = 'dig',
+        Permissions = 'test-network'
+    )]
     [cmdletbinding()]
     param(
         [parameter(Mandatory)]
@@ -61,3 +67,5 @@ function Dig {
         New-PoshBotCardResponse -Type Warning -Text "Unable to resolve [$Name] :(" -Title 'Rut row' -ThumbnailUrl 'http://images4.fanpop.com/image/photos/17000000/Scooby-Doo-Where-Are-You-The-Original-Intro-scooby-doo-17020515-500-375.jpg'
     }
 }
+
+Export-ModuleMember -Function 'Invoke-Ping', 'Invoke-Dig'
