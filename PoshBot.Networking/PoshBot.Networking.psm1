@@ -68,4 +68,43 @@ function Invoke-Dig {
     }
 }
 
-Export-ModuleMember -Function 'Invoke-Ping', 'Invoke-Dig'
+function Invoke-TestPort {
+    <#
+    .SYNOPSIS
+        Perform port testing on a host
+    .EXAMPLE
+        !testport (srv.domain.local | --ComputerName src.domain.local) [--Port 443]
+    #>
+    [PoshBot.BotCommand(
+        CommandName = 'testport',
+        Permissions = 'test-network'
+    )]
+    [cmdletbinding()]
+    param(
+        [parameter(Mandatory)]
+        [Alias('Name')]
+        [string]$ComputerName,
+
+        [parameter(Mandatory)]
+        [string]$Port
+    )
+
+    if ($PSVersionTable.PSVersion.Major -ge 6) {
+        $r = Test-Connection -TargetName $ComputerName -TCPPort $Port -ErrorAction SilentlyContinue |
+                Select-Object @{Name ='ComputerName';Expression={$ComputerName}},@{Name='Port';Expression={$Port}},@{Name='Result';Expression={$_}} |
+                Format-Table -Autosize |
+                Out-String
+    }
+    else {
+        $r = Test-NetConnection -ComputerName $ComputerName -Port $Port -ErrorAction SilentlyContinue | Format-Table -Autosize | Out-String
+    }
+    if ($r) {
+        New-PoshBotCardResponse -Type Normal -Text $r
+    } else {
+        New-PoshBotCardResponse -Type Warning -Text "Unable to resolve [$ComputerName] :(" -Title 'Rut row' -ThumbnailUrl 'http://images4.fanpop.com/image/photos/17000000/Scooby-Doo-Where-Are-You-The-Original-Intro-scooby-doo-17020515-500-375.jpg'
+    }
+}
+
+
+
+Export-ModuleMember -Function 'Invoke-Ping', 'Invoke-Dig', 'Invoke-TestPort'

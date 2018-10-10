@@ -70,3 +70,17 @@ Name       Type TTL Section   PrimaryServer  NameAdministrator    SerialNumber
 ----       ---- --- -------   -------------  -----------------    ------------
 google.com SOA  59  Authority ns4.google.com dns-admin.google.com 150821008
 ```
+
+```
+!testport server1 443
+ComputerName RemotePort RemoteAddress PingSucceeded PingReplyDetails (RTT) TcpTestSucceeded
+------------ ---------- ------------- ------------- ---------------------- ----------------
+server1       443        1.2.3.4      False                                True
+```
+
+```
+!testport --computername server2  --port 5986
+ComputerName RemotePort RemoteAddress PingSucceeded PingReplyDetails (RTT) TcpTestSucceeded
+------------ ---------- ------------- ------------- ---------------------- ----------------
+server2       5986       1.2.3.4      False                                True
+```
