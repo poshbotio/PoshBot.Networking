@@ -114,7 +114,7 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        # ReleaseNotes = ''
+        ReleaseNotes = 'https://raw.githubusercontent.com/poshbotio/PoshBot.Networking/master/CHANGELOG.md'
 
     } # End of PSData hashtable
 
