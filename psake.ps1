@@ -43,3 +43,7 @@ task Pester -Depends Init {
         Invoke-Pester -Path $tests -PassThru -EnableExit
     }
 } -description 'Run Pester tests'
+
+task Publish -depends Test {
+    Publish-Module -Path $env:BHModulePath -Repository PSGallery -NuGetApiKey $env:PSGALLERY_API_KEY -Verbose
+}

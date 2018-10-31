@@ -2,7 +2,7 @@
 
 [cmdletbinding(DefaultParameterSetName = 'task')]
 param(
-    [parameter(ParameterSetName = 'task')]
+    [parameter(ParameterSetName = 'task', Position = 0)]
     [string[]]$Task = 'default',
 
     [parameter(ParameterSetName = 'help')]
@@ -56,7 +56,7 @@ if ($PSBoundParameters.ContainsKey('help')) {
     Get-PSakeScriptTasks -buildFile "$PSScriptRoot\psake.ps1" |
         Format-Table -Property Name, Description, Alias, DependsOn
 } else {
-    Set-BuildEnvironment
+    Set-BuildEnvironment -Force
 
     Invoke-psake -buildFile "$PSScriptRoot\psake.ps1" -taskList $Task -nologo -Verbose:$VerbosePreference
     exit ( [int]( -not $psake.build_success ) )
