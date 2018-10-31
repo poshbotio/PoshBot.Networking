@@ -6,6 +6,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.2.0] - 2018-10-30
+
+### Added
+
+- [**#3**](https://github.com/poshbotio/PoshBot.Networking/pull/3) Add new commands `Get-WebServerInfo`, `Get-GeoLocIp`, and `Get-NetASInfo` (via [@omiossec](https://github.com/omiossec))
+
 ## [1.1.0] - 2018-10-09
 
 ### Added
