@@ -1,10 +1,18 @@
 
+$scoobyDooUri = 'https://raw.githubusercontent.com/poshbotio/PoshBot/master/Media/scooby_doo.jpg'
+
 function Invoke-Ping {
     <#
     .SYNOPSIS
-        Tests a connection to a host
+        Tests a connection to a host.
+    .PARAMETER Name
+        IPAddress or DNS name to ping.
+    .PARAMETER Count
+        The number of pings to send.
+    .PARAMETER IPv6
+        Use IPv6
     .EXAMPLE
-        !ping (<www.google.com> | --name <www.google.com>) [--count 2] [--ipv6]
+        !ping (<www.google.com> | -name <www.google.com>) [-count 2] [-ipv6]
     #>
     [PoshBot.BotCommand(
         CommandName = 'ping',
@@ -34,9 +42,15 @@ function Invoke-Ping {
 function Invoke-Dig {
     <#
     .SYNOPSIS
-        Perform DNS resolution on a host
+        Perform DNS resolution on a host.
+    .PARAMETER Name
+        The DNS name to resolve.
+    .PARAMETER Type
+        THe DNS record type to resolve.
+    .PARAMETER Server
+        The DNS server to use.
     .EXAMPLE
-        !dig (<www.google.com> | --name <www.google.com>) [--type <A>] [--server <8.8.8.8>]
+        !dig (<www.google.com> | -name <www.google.com>) [-type <A>] [-server <8.8.8.8>]
     #>
     [PoshBot.BotCommand(
         CommandName = 'dig',
@@ -64,14 +78,18 @@ function Invoke-Dig {
     if ($r) {
         New-PoshBotCardResponse -Type Normal -Text $r
     } else {
-        New-PoshBotCardResponse -Type Warning -Text "Unable to resolve [$Name] :(" -Title 'Rut row' -ThumbnailUrl 'http://images4.fanpop.com/image/photos/17000000/Scooby-Doo-Where-Are-You-The-Original-Intro-scooby-doo-17020515-500-375.jpg'
+        New-PoshBotCardResponse -Type Warning -Text "Unable to resolve [$Name] :(" -Title 'Rut row' -ThumbnailUrl $scoobyDooUri
     }
 }
 
 function Invoke-TestPort {
     <#
     .SYNOPSIS
-        Perform port testing on a host
+        Perform port testing on a host.
+    .PARAMETER ComputerName
+        The computure name or IP address to test.
+    .PARAMETER Port
+        The TCP port to test.
     .EXAMPLE
         !testport (srv.domain.local | --ComputerName src.domain.local) [--Port 443]
     #>
@@ -91,25 +109,26 @@ function Invoke-TestPort {
 
     if ($PSVersionTable.PSVersion.Major -ge 6) {
         $r = Test-Connection -TargetName $ComputerName -TCPPort $Port -ErrorAction SilentlyContinue |
-                Select-Object @{Name ='ComputerName';Expression={$ComputerName}},@{Name='Port';Expression={$Port}},@{Name='Result';Expression={$_}} |
+                Select-Object @{Name = 'ComputerName'; Expression = {$ComputerName}}, @{Name = 'Port'; Expression = {$Port}}, @{Name = 'Result'; Expression = {$_}} |
                 Format-Table -Autosize |
                 Out-String
-    }
-    else {
+    } else {
         $r = Test-NetConnection -ComputerName $ComputerName -Port $Port -ErrorAction SilentlyContinue | Format-Table -Autosize | Out-String
     }
+
     if ($r) {
         New-PoshBotCardResponse -Type Normal -Text $r
     } else {
-        New-PoshBotCardResponse -Type Warning -Text "Unable to resolve [$ComputerName] :(" -Title 'Rut row' -ThumbnailUrl 'http://images4.fanpop.com/image/photos/17000000/Scooby-Doo-Where-Are-You-The-Original-Intro-scooby-doo-17020515-500-375.jpg'
+        New-PoshBotCardResponse -Type Warning -Text "Unable to resolve [$ComputerName] :(" -Title 'Rut row' -ThumbnailUrl $scoobyDooUri
     }
 }
 
-
-function get-webServerInfos {
+function Get-WebServerInfo {
     <#
     .SYNOPSIS
-        Check HTTP header for serverinfo
+        Check HTTP header for serverinfo.
+    .PARAMETER Uri
+        Uri to retrieve HTTP server information for.
     .EXAMPLE
         !webserverinfo http://uri
     #>
@@ -117,7 +136,6 @@ function get-webServerInfos {
         CommandName = 'webserverinfo',
         Permissions = 'test-network'
     )]
-     
     [cmdletbinding()]
     param(
         [parameter(Mandatory)]
@@ -125,58 +143,44 @@ function get-webServerInfos {
         [string]$Uri
     )
 
- 
- try {
-
-    $HttpResponse = Invoke-WebRequest -UseBasicParsing -Uri $Uri 
-
-    if ($HttpResponse.Headers.server.count -gt 0) {
-        $Response = $HttpResponse.Headers.server -join " "
-    }
-    else {
-        $ErrorMessage = "No Server Info"
-    }
-
-}
-    Catch [System.Net.WebException] {
-
+    try {
+        $httpResponse = Invoke-WebRequest -UseBasicParsing -Uri $Uri
+        if ($httpResponse.Headers.server.count -gt 0) {
+            $response = $httpResponse.Headers.server -join ' '
+        } else {
+            $errorMessage = 'No Server Info'
+        }
+    } catch [System.Net.WebException] {
         switch ($_.Exception.Response.StatusCode) {
-            "BadRequest" { 
-                $ErrorMessage = "Server Error"
-             }
-           
-            "InternalServerError" { 
-                $ErrorMessage = "Server Error 500"
+            'BadRequest' {
+                $errorMessage = 'Server Error'
             }
-            Default {
-                 $ErrorMessage =  "Server Error"  +  $_.Exception
+            'InternalServerError' {
+                $errorMessage = 'Server Error 500'
+            }
+            default {
+                $errorMessage =  "Server Error: $($_.Exception)"
             }
         }
-    }
-    catch {
-        write-debug $_.Exception
-        $ErrorMessage =  "Receive a general error " +  $_.Exception
-    }
-
-    finally {
-
-        if ($ErrorMessage) {
-            New-PoshBotCardResponse -Type Warning -Text "$ErrorMessage :(" -Title 'Rut row' -ThumbnailUrl 'https://raw.githubusercontent.com/poshbotio/PoshBot/master/Media/scooby_doo.jpg'
+    } catch {
+        Write-Debug $_.Exception
+        $errorMessage =  "Received a general error: $($_.Exception)"
+    } finally {
+        if ($errorMessage) {
+            New-PoshBotCardResponse -Type Warning -Text "$errorMessage :(" -Title 'Rut row' -ThumbnailUrl $scoobyDooUri
         }
-
-        if ($Response) {
-            New-PoshBotCardResponse -Type Normal -Text $Response
+        if ($response) {
+            New-PoshBotCardResponse -Type Normal -Text $response
         }
-        
     }
-
 }
 
-function get-GeoLocIp {
+function Get-GeoLocIp {
     <#
     .SYNOPSIS
         Get Geo location for an IP or a CIDR network from the RIPE database
-    
+    .PARAMETER IPAddress
+        IP address to retrieve geo location information for.
     .EXAMPLE
         !geolocip 83.23.45.3
         !geolocip 83.23.45.0/21
@@ -185,187 +189,120 @@ function get-GeoLocIp {
         CommandName = 'geolocip',
         Permissions = 'test-network'
     )]
-   
     [cmdletbinding()]
     param(
         [parameter(Mandatory)]
-        [string]$IP
+        [Alias('IP')]
+        [string]$IPAddress
     )
 
- 
- try {
-
-    $HttpResponse = Invoke-WebRequest -UseBasicParsing -Uri "https://stat.ripe.net/data/geoloc/data.json?resource=$($IP)"
-
-    if ($HttpResponse) {
-
-        $JsonResponse = $HttpResponse | ConvertFrom-Json
-        
-
-        if ($JsonResponse.data.locations.count -gt 0) {
-        
-            $Response = ""
-
-            foreach ($location in $JsonResponse.data.locations) {
-
-                $Response += "$($location.City) $($location.country) `n"
-
+    try {
+        $httpResponse = Invoke-WebRequest -UseBasicParsing -Uri "https://stat.ripe.net/data/geoloc/data.json?resource=$($IPAddress)"
+        if ($httpResponse) {
+            $jsonResponse = $httpResponse | ConvertFrom-Json
+            if ($jsonResponse.data.locations.count -gt 0) {
+                $response = ''
+                foreach ($location in $jsonResponse.data.locations) {
+                    $response += "$($location.City) $($location.country) `n"
+                }
+            } else {
+                $errorMessage = 'Not Found'
             }
-
-
         }
-        else {
-            $ErrorMessage = "Not Found"
-        }
-    }
-
-
-
-}
-    Catch [System.Net.WebException] {
-
+    } catch [System.Net.WebException] {
         switch ($_.Exception.Response.StatusCode) {
-            "BadRequest" { 
-                $ErrorMessage = "Server Error"
-             }
-           
-            "InternalServerError" { 
-                $ErrorMessage = "Server Error 500"
+            'BadRequest' {
+                $errorMessage = 'Server Error'
             }
-            Default {
-                 $ErrorMessage =  "Server Error"  +  $_.Exception
+            'InternalServerError' {
+                $errorMessage = 'Server Error 500'
+            }
+            default {
+                 $errorMessage =  "Server Error: $($_.Exception)"
             }
         }
-    }
-    catch {
-        write-debug $_.Exception
-        $ErrorMessage =  "Receive a general error " +  $_.Exception
-    }
-
-    finally {
-
-        if ($ErrorMessage) {
-            New-PoshBotCardResponse -Type Warning -Text "$ErrorMessage :(" -Title 'Rut row' -ThumbnailUrl 'https://raw.githubusercontent.com/poshbotio/PoshBot/master/Media/scooby_doo.jpg'
+    } catch {
+        Write-debug $_.Exception
+        $errorMessage =  "Receive a general error: $($_.Exception)"
+    } finally {
+        if ($errorMessage) {
+            New-PoshBotCardResponse -Type Warning -Text "$errorMessage :(" -Title 'Rut row' -ThumbnailUrl $scoobyDooUri
         }
-
-        if ($Response) {
-            New-PoshBotCardResponse -Type Normal -Text $Response
-
+        if ($response) {
+            New-PoshBotCardResponse -Type Normal -Text $response
         }
-        
     }
-
 }
 
-function get-NetASInfo {
+function Get-NetASInfo {
     <#
     .SYNOPSIS
-        Check HTTP header for serverinfo
+        Check HTTP header for server information.
+    .PARAMETER IPAddress
+        IP address to retrieve network AS information for.
     .EXAMPLE
-        !NetASInfo IP
+        !netasinfo IPAddress
     #>
     [PoshBot.BotCommand(
-        CommandName = 'NetASInfo',
+        CommandName = 'netasinfo',
         Permissions = 'test-network'
     )]
-     
     [cmdletbinding()]
     param(
         [parameter(Mandatory)]
-        [string]$IP
+        [Alias('IP')]
+        [string]$IPAddress
     )
-   
- 
- try {
 
-    $HttpResponse = Invoke-WebRequest -UseBasicParsing -Uri "https://stat.ripe.net/data/searchcomplete/data.json?resource=$($IP)"
-
-    if ($HttpResponse) {
-
-        $JsonResponse = $HttpResponse | ConvertFrom-Json
-        
-        
-        
-        if ($JsonResponse.data.categories -ne $null) {
-        
-            if ($JsonResponse.data.categories.suggestions.count -gt 0) {
-            
-                foreach ($RowData in  $JsonResponse.data.categories.suggestions) {
-
-                        if ($RowData.value -like 'AS*') {
-                            $AsCode = $RowData.value
-                            
+    try {
+        $httpResponse = Invoke-WebRequest -UseBasicParsing -Uri "https://stat.ripe.net/data/searchcomplete/data.json?resource=$($IPAddress)"
+        if ($httpResponse) {
+            $jsonResponse = $httpResponse | ConvertFrom-Json
+            if ($null -ne $jsonResponse.data.categories) {
+                if ($jsonResponse.data.categories.suggestions.count -gt 0) {
+                    foreach ($row in  $jsonResponse.data.categories.suggestions) {
+                        if ($row.value -like 'AS*') {
+                            $asCode = $row.value
                         }
+                    }
+                } else {
+                    $asCode =  $jsonResponse.data.categories.suggestions.value
                 }
+
+                if ($asCode) {
+                    $asInfoResponse = Invoke-WebRequest -UseBasicParsing -Uri "https://stat.ripe.net/data/as-overview/data.json?resource=$($asCode)"
+                    $jsonAsInfo = $asInfoResponse | ConvertFrom-Json
+                    $response = "$asCode $($jsonAsInfo.data.holder)"
+                } else {
+                    $errorMessage = 'Not Data Found'
+                }
+            } else {
+                $errorMessage = 'Not Data Found'
             }
-            else {
-                $AsCode =  $JsonResponse.data.categories.suggestions.value
-            }
-            
-
-            if ($AsCode) {
-
-                $AsInfoResponse = Invoke-WebRequest -UseBasicParsing -Uri "https://stat.ripe.net/data/as-overview/data.json?resource=$($AsCode)"
-
-                $JsonAsInfo = $AsInfoResponse | ConvertFrom-Json
-
-                $Response = $AsCode + " " + $JsonAsInfo.data.holder
-                 
-            }
-            else {
-                $ErrorMessage = "Not Data Found"
-            }
-
-           
-            
-
-
         }
-        else {
-            $ErrorMessage = "Not Data Found"
-        }
-    }
-
-
-
-}
-    Catch [System.Net.WebException] {
-
+    } catch [System.Net.WebException] {
         switch ($_.Exception.Response.StatusCode) {
-            "BadRequest" { 
-                $ErrorMessage = "Server Error"
-             }
-           
-            "InternalServerError" { 
-                $ErrorMessage = "Server Error 500"
+            'BadRequest' {
+                $errorMessage = 'Server Error'
             }
-            Default {
-                 $ErrorMessage =  "Server Error"  +  $_.Exception
+            'InternalServerError' {
+                $errorMessage = 'Server Error 500'
+            }
+            default {
+                $errorMessage =  "Server Error: $($_.Exception)"
             }
         }
-    }
-    catch {
-        write-debug $_.Exception
-        $ErrorMessage =  "Receive a general error " +  $_.Exception
-    }
-
-    finally {
-
-        if ($ErrorMessage) {
-            New-PoshBotCardResponse -Type Warning -Text "$ErrorMessage :(" -Title 'Rut row' -ThumbnailUrl 'https://raw.githubusercontent.com/poshbotio/PoshBot/master/Media/scooby_doo.jpg'
+    } catch {
+        Write-debug $_.Exception
+        $errorMessage =  "Receive a general error: $($_.Exception)"
+    } finally {
+        if ($errorMessage) {
+            New-PoshBotCardResponse -Type Warning -Text "$errorMessage :(" -Title 'Rut row' -ThumbnailUrl $scoobyDooUri
         }
-
-        if ($Response) {
-            New-PoshBotCardResponse -Type Normal -Text $Response
+        if ($response) {
+            New-PoshBotCardResponse -Type Normal -Text $response
         }
-        
     }
-
 }
 
-
-get-NetASInfo -ip "178.ezarez.208.20"
-
-
-
-Export-ModuleMember -Function 'Invoke-Ping', 'Invoke-Dig', 'Invoke-TestPort', 'Get-WebServerInfos','get-GeoLocIp','get-NetASInfo'
+Export-ModuleMember -Function 'Invoke-Ping', 'Invoke-Dig', 'Invoke-TestPort', 'Get-WebServerInfo', 'Get-GeoLocIp', 'Get-NetASInfo'
