@@ -106,5 +106,266 @@ function Invoke-TestPort {
 }
 
 
+function get-webServerInfos {
+    <#
+    .SYNOPSIS
+        Check HTTP header for serverinfo
+    .EXAMPLE
+        !webserverinfo http://uri
+    #>
+    [PoshBot.BotCommand(
+        CommandName = 'webserverinfo',
+        Permissions = 'test-network'
+    )]
+     
+    [cmdletbinding()]
+    param(
+        [parameter(Mandatory)]
+        [Alias('WebServer')]
+        [string]$Uri
+    )
 
-Export-ModuleMember -Function 'Invoke-Ping', 'Invoke-Dig', 'Invoke-TestPort'
+ 
+ try {
+
+    $HttpResponse = Invoke-WebRequest -UseBasicParsing -Uri $Uri 
+
+    if ($HttpResponse.Headers.server.count -gt 0) {
+        $Response = $HttpResponse.Headers.server -join " "
+    }
+    else {
+        $ErrorMessage = "No Server Info"
+    }
+
+}
+    Catch [System.Net.WebException] {
+
+        switch ($_.Exception.Response.StatusCode) {
+            "BadRequest" { 
+                $ErrorMessage = "Server Error"
+             }
+           
+            "InternalServerError" { 
+                $ErrorMessage = "Server Error 500"
+            }
+            Default {
+                 $ErrorMessage =  "Server Error"  +  $_.Exception
+            }
+        }
+    }
+    catch {
+        write-debug $_.Exception
+        $ErrorMessage =  "Receive a general error " +  $_.Exception
+    }
+
+    finally {
+
+        if ($ErrorMessage) {
+            New-PoshBotCardResponse -Type Warning -Text "$ErrorMessage :(" -Title 'Rut row' -ThumbnailUrl 'https://raw.githubusercontent.com/poshbotio/PoshBot/master/Media/scooby_doo.jpg'
+        }
+
+        if ($Response) {
+            New-PoshBotCardResponse -Type Normal -Text $Response
+        }
+        
+    }
+
+}
+
+function get-GeoLocIp {
+    <#
+    .SYNOPSIS
+        Get Geo location for an IP or a CIDR network from the RIPE database
+    
+    .EXAMPLE
+        !geolocip 83.23.45.3
+        !geolocip 83.23.45.0/21
+     #>
+    [PoshBot.BotCommand(
+        CommandName = 'geolocip',
+        Permissions = 'test-network'
+    )]
+   
+    [cmdletbinding()]
+    param(
+        [parameter(Mandatory)]
+        [string]$IP
+    )
+
+ 
+ try {
+
+    $HttpResponse = Invoke-WebRequest -UseBasicParsing -Uri "https://stat.ripe.net/data/geoloc/data.json?resource=$($IP)"
+
+    if ($HttpResponse) {
+
+        $JsonResponse = $HttpResponse | ConvertFrom-Json
+        
+
+        if ($JsonResponse.data.locations.count -gt 0) {
+        
+            $Response = ""
+
+            foreach ($location in $JsonResponse.data.locations) {
+
+                $Response += "$($location.City) $($location.country) `n"
+
+            }
+
+
+        }
+        else {
+            $ErrorMessage = "Not Found"
+        }
+    }
+
+
+
+}
+    Catch [System.Net.WebException] {
+
+        switch ($_.Exception.Response.StatusCode) {
+            "BadRequest" { 
+                $ErrorMessage = "Server Error"
+             }
+           
+            "InternalServerError" { 
+                $ErrorMessage = "Server Error 500"
+            }
+            Default {
+                 $ErrorMessage =  "Server Error"  +  $_.Exception
+            }
+        }
+    }
+    catch {
+        write-debug $_.Exception
+        $ErrorMessage =  "Receive a general error " +  $_.Exception
+    }
+
+    finally {
+
+        if ($ErrorMessage) {
+            New-PoshBotCardResponse -Type Warning -Text "$ErrorMessage :(" -Title 'Rut row' -ThumbnailUrl 'https://raw.githubusercontent.com/poshbotio/PoshBot/master/Media/scooby_doo.jpg'
+        }
+
+        if ($Response) {
+            New-PoshBotCardResponse -Type Normal -Text $Response
+
+        }
+        
+    }
+
+}
+
+function get-NetASInfo {
+    <#
+    .SYNOPSIS
+        Check HTTP header for serverinfo
+    .EXAMPLE
+        !NetASInfo IP
+    #>
+    [PoshBot.BotCommand(
+        CommandName = 'NetASInfo',
+        Permissions = 'test-network'
+    )]
+     
+    [cmdletbinding()]
+    param(
+        [parameter(Mandatory)]
+        [string]$IP
+    )
+   
+ 
+ try {
+
+    $HttpResponse = Invoke-WebRequest -UseBasicParsing -Uri "https://stat.ripe.net/data/searchcomplete/data.json?resource=$($IP)"
+
+    if ($HttpResponse) {
+
+        $JsonResponse = $HttpResponse | ConvertFrom-Json
+        
+        
+        
+        if ($JsonResponse.data.categories -ne $null) {
+        
+            if ($JsonResponse.data.categories.suggestions.count -gt 0) {
+            
+                foreach ($RowData in  $JsonResponse.data.categories.suggestions) {
+
+                        if ($RowData.value -like 'AS*') {
+                            $AsCode = $RowData.value
+                            
+                        }
+                }
+            }
+            else {
+                $AsCode =  $JsonResponse.data.categories.suggestions.value
+            }
+            
+
+            if ($AsCode) {
+
+                $AsInfoResponse = Invoke-WebRequest -UseBasicParsing -Uri "https://stat.ripe.net/data/as-overview/data.json?resource=$($AsCode)"
+
+                $JsonAsInfo = $AsInfoResponse | ConvertFrom-Json
+
+                $Response = $AsCode + " " + $JsonAsInfo.data.holder
+                 
+            }
+            else {
+                $ErrorMessage = "Not Data Found"
+            }
+
+           
+            
+
+
+        }
+        else {
+            $ErrorMessage = "Not Data Found"
+        }
+    }
+
+
+
+}
+    Catch [System.Net.WebException] {
+
+        switch ($_.Exception.Response.StatusCode) {
+            "BadRequest" { 
+                $ErrorMessage = "Server Error"
+             }
+           
+            "InternalServerError" { 
+                $ErrorMessage = "Server Error 500"
+            }
+            Default {
+                 $ErrorMessage =  "Server Error"  +  $_.Exception
+            }
+        }
+    }
+    catch {
+        write-debug $_.Exception
+        $ErrorMessage =  "Receive a general error " +  $_.Exception
+    }
+
+    finally {
+
+        if ($ErrorMessage) {
+            New-PoshBotCardResponse -Type Warning -Text "$ErrorMessage :(" -Title 'Rut row' -ThumbnailUrl 'https://raw.githubusercontent.com/poshbotio/PoshBot/master/Media/scooby_doo.jpg'
+        }
+
+        if ($Response) {
+            New-PoshBotCardResponse -Type Normal -Text $Response
+        }
+        
+    }
+
+}
+
+
+get-NetASInfo -ip "178.ezarez.208.20"
+
+
+
+Export-ModuleMember -Function 'Invoke-Ping', 'Invoke-Dig', 'Invoke-TestPort', 'Get-WebServerInfos','get-GeoLocIp','get-NetASInfo'
